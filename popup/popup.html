@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Lazy PM — Settings</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="header-top">
+        <div class="header-title"><img src="../icons/sloth.png" alt="" class="header-logo"><h1>The Lazy PM</h1></div>
+        <label class="toggle" title="Show widget on pages">
+          <input type="checkbox" id="widget-enabled">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </header>
+
+    <form id="settings-form">
+      <!-- API Keys -->
+      <section class="card">
+        <h2>API Keys</h2>
+        <div class="field">
+          <label for="openrouter-key">OpenRouter API Key</label>
+          <input type="password" id="openrouter-key" placeholder="sk-or-..." autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="groq-key">Groq API Key</label>
+          <input type="password" id="groq-key" placeholder="gsk_..." autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="notion-token">Notion Token</label>
+          <input type="password" id="notion-token" placeholder="ntn_..." autocomplete="off">
+        </div>
+      </section>
+
+      <!-- Model & Preferences -->
+      <section class="card">
+        <h2>Preferences</h2>
+        <div class="field">
+          <label for="model-select">AI Model</label>
+          <select id="model-select">
+            <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash (default)</option>
+            <option value="google/gemini-2.0-pro-001">Gemini 2.0 Pro</option>
+            <option value="anthropic/claude-sonnet-4-6">Claude Sonnet 4.6</option>
+            <option value="openai/gpt-4o">GPT-4o</option>
+            <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+          </select>
+        </div>
+      </section>
+
+      <button type="submit" class="save-btn" id="save-btn">Save Settings</button>
+      <p class="status" id="status-msg"></p>
+    </form>
+
+    <!-- Session History -->
+    <section class="card" id="history-section">
+      <h2>Session History</h2>
+      <div id="history-list">
+        <p class="history-empty">No saved sessions yet</p>
+      </div>
+    </section>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

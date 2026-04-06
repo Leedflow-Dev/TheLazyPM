@@ -1,0 +1,279 @@
+/* The Lazy PM — Popup Settings Styles */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Inter, -apple-system, system-ui, sans-serif;
+  background: #f8f9fa;
+  color: #1a1a2e;
+  width: 380px;
+  min-height: 400px;
+}
+
+.container {
+  padding: 20px;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.header-top .toggle {
+  position: absolute;
+  right: 0;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.header-logo {
+  width: 28px;
+  height: 28px;
+}
+
+.header h1 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+/* Cards */
+.card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.card h2 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+/* Fields */
+.field {
+  margin-bottom: 12px;
+}
+
+.field:last-child {
+  margin-bottom: 0;
+}
+
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a2e;
+  margin-bottom: 4px;
+}
+
+.field input[type="password"],
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #1a1a2e;
+  background: #f8f9fa;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 200ms ease;
+}
+
+.field input[type="password"]:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: #3b82f6;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+/* Toggle */
+.toggle-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toggle-field > label:first-child {
+  margin-bottom: 0;
+}
+
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: #e5e7eb;
+  border-radius: 24px;
+  transition: background 200ms ease;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: #ffffff;
+  border-radius: 50%;
+  transition: transform 200ms ease;
+}
+
+.toggle input:checked + .toggle-slider {
+  background: #3b82f6;
+}
+
+.toggle input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+/* Save Button */
+.save-btn {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #ffffff;
+  background: #3b82f6;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 200ms ease;
+  margin-top: 4px;
+}
+
+.save-btn:hover {
+  background: #2563eb;
+}
+
+.save-btn:active {
+  background: #1d4ed8;
+}
+
+/* Status Message */
+.status {
+  text-align: center;
+  font-size: 12px;
+  color: #22c55e;
+  margin-top: 8px;
+  min-height: 16px;
+  transition: opacity 200ms ease;
+}
+
+/* Session History */
+.history-empty {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 12px;
+  padding: 12px 0;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-meta {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.history-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.history-btn {
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 500;
+  font-family: inherit;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.history-btn-load {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.history-btn-load:hover {
+  background: #2563eb;
+}
+
+.history-btn-delete {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.history-btn-delete:hover {
+  background: #fef2f2;
+  color: #ef4444;
+}
