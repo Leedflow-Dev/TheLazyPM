@@ -13,6 +13,27 @@
   let sessionName = 'Untitled Session';
   let sessionSaved = false;
 
+  // ── Safe messaging (handles extension context invalidation) ──
+  function safeSendMessage(message, callback) {
+    try {
+      if (!chrome.runtime?.id) {
+        removeWidget();
+        return;
+      }
+      chrome.runtime.sendMessage(message, (resp) => {
+        if (chrome.runtime.lastError) {
+          console.warn('[TheLazyPM]', chrome.runtime.lastError.message);
+          if (callback) callback(null);
+          return;
+        }
+        if (callback) callback(resp);
+      });
+    } catch (e) {
+      console.warn('[TheLazyPM] Context invalidated, cleaning up');
+      removeWidget();
+    }
+  }
+
   // ── SVG Icons ──
   const ICONS = {
     camera: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
@@ -780,20 +801,20 @@
     bindWidgetEvents();
 
     // Restore state from service worker
-    chrome.runtime.sendMessage({ type: 'GET_SCREENSHOTS' }, (resp) => {
+    safeSendMessage({ type: 'GET_SCREENSHOTS' }, (resp) => {
       if (resp?.success && resp.screenshots.length > 0) {
         screenshots = resp.screenshots;
         renderGrid();
       }
     });
-    chrome.runtime.sendMessage({ type: 'GET_TRANSCRIPTS' }, (resp) => {
+    safeSendMessage({ type: 'GET_TRANSCRIPTS' }, (resp) => {
       if (resp?.success && resp.transcripts.length > 0) {
         transcripts = resp.transcripts;
         renderTranscripts();
       }
     });
     // Restore session meta (name, markdown, hasDoc)
-    chrome.runtime.sendMessage({ type: 'GET_SESSION_META' }, (resp) => {
+    safeSendMessage({ type: 'GET_SESSION_META' }, (resp) => {
       if (resp?.success && resp.meta) {
         sessionName = resp.meta.name || 'Untitled Session';
         generatedMarkdown = resp.meta.markdown || '';
@@ -806,7 +827,14 @@
         // (but only if WE don't have a local mediaRecorder running)
         if (resp.meta.isRecording && !mediaRecorder) {
           setRecordingUI(true, resp.meta.recordingStartTime, false);
-          showToast('🎙️ Recording in progress — keep talking on the other tab');
+          showToast('Recording in progress — keep talking on the other tab');
+        }
+
+        // Notify user if continuing a stale session (>30 min idle)
+        const hasContent = transcripts.length > 0 || screenshots.length > 0 || resp.meta.hasDoc;
+        const lastActive = resp.meta.lastActiveAt || 0;
+        if (hasContent && lastActive && (Date.now() - lastActive) > 30 * 60 * 1000) {
+          showToast(`Continuing: ${sessionName}`);
         }
       }
     });
@@ -857,7 +885,7 @@
     sessionNameInput.addEventListener('blur', () => {
       sessionName = sessionNameInput.value.trim() || 'Untitled Session';
       sessionNameInput.value = sessionName;
-      chrome.runtime.sendMessage({ type: 'UPDATE_SESSION_META', meta: { name: sessionName } });
+      safeSendMessage({ type: 'UPDATE_SESSION_META', meta: { name: sessionName } });
     });
     sessionNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sessionNameInput.blur(); });
     refineSendBtn.addEventListener('click', () => refineDoc(refineInput.value));
@@ -875,7 +903,7 @@
     function submitNote(text) {
       const trimmed = text.trim();
       if (!trimmed) return;
-      chrome.runtime.sendMessage({ type: 'ADD_NOTE', text: trimmed }, (resp) => {
+      safeSendMessage({ type: 'ADD_NOTE', text: trimmed }, (resp) => {
         if (resp?.success && resp.transcript) {
           transcripts.push(resp.transcript);
           invalidateDoc();
@@ -904,7 +932,7 @@
 
     // Small delay to let the widget disappear from render
     setTimeout(() => {
-      chrome.runtime.sendMessage({ type: 'CAPTURE_SCREENSHOT' }, (resp) => {
+      safeSendMessage({ type: 'CAPTURE_SCREENSHOT' }, (resp) => {
         if (hostEl) hostEl.style.display = '';
         if (!resp?.success) {
           console.error('[TheLazyPM] Screenshot failed:', resp?.error);
@@ -1026,7 +1054,7 @@
   // ═══════════════════════════════════════════
 
   function addScreenshot(dataUrl, timestamp, url, autoAnnotate) {
-    chrome.runtime.sendMessage({
+    safeSendMessage({
       type: 'ADD_SCREENSHOT', dataUrl, timestamp, url,
     }, (resp) => {
       if (resp?.success) {
@@ -1041,7 +1069,7 @@
   }
 
   function deleteScreenshot(idx) {
-    chrome.runtime.sendMessage({ type: 'DELETE_SCREENSHOT', index: idx }, (resp) => {
+    safeSendMessage({ type: 'DELETE_SCREENSHOT', index: idx }, (resp) => {
       if (resp?.success) {
         screenshots.splice(idx, 1);
         invalidateDoc();
@@ -1051,7 +1079,7 @@
   }
 
   function updateScreenshotAnnotation(idx, annotatedUrl) {
-    chrome.runtime.sendMessage({
+    safeSendMessage({
       type: 'UPDATE_SCREENSHOT', index: idx, annotatedUrl,
     }, (resp) => {
       if (resp?.success) {
@@ -1146,7 +1174,7 @@
 
   async function downloadAllZip() {
     // ZIP generation happens in the service worker (no CSP restrictions there)
-    chrome.runtime.sendMessage({ type: 'GENERATE_ZIP' }, (resp) => {
+    safeSendMessage({ type: 'GENERATE_ZIP' }, (resp) => {
       if (resp?.success && resp.zipDataUrl) {
         const a = document.createElement('a');
         a.href = resp.zipDataUrl;
@@ -1493,7 +1521,7 @@
       recordingStartTime = Date.now();
       setRecordingUI(true, recordingStartTime, true);
       // Track in service worker so other pages know
-      chrome.runtime.sendMessage({ type: 'UPDATE_SESSION_META', meta: { isRecording: true, recordingStartTime } });
+      safeSendMessage({ type: 'UPDATE_SESSION_META', meta: { isRecording: true, recordingStartTime } });
     } catch (err) {
       console.error('[TheLazyPM] Mic access denied:', err.message);
     }
@@ -1502,7 +1530,7 @@
   function stopRecording() {
     if (!mediaRecorder || mediaRecorder.state === 'inactive') {
       // No local recorder — ask the tab that has it to stop
-      chrome.runtime.sendMessage({ type: 'STOP_RECORDING_REQUEST' });
+      safeSendMessage({ type: 'STOP_RECORDING_REQUEST' });
       setRecordingUI(false);
       showToast('Stopping recording...');
       return;
@@ -1513,7 +1541,7 @@
     if (transcribingEl) transcribingEl.classList.remove('lpm-hidden');
 
     // Mark as not recording immediately
-    chrome.runtime.sendMessage({ type: 'UPDATE_SESSION_META', meta: { isRecording: false } });
+    safeSendMessage({ type: 'UPDATE_SESSION_META', meta: { isRecording: false } });
 
     const duration = Math.round((Date.now() - recordingStartTime) / 1000);
     const startTime = recordingStartTime;
@@ -1526,15 +1554,22 @@
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        chrome.runtime.sendMessage({
+        const transcribeTimeout = setTimeout(() => {
+          if (transcribingEl) transcribingEl.classList.add('lpm-hidden');
+          showToast('Transcription failed — try again');
+        }, 30000);
+
+        safeSendMessage({
           type: 'TRANSCRIBE_AUDIO',
           audioData: reader.result,
           duration,
           recordingStartTime: startTime,
         }, (resp) => {
+          clearTimeout(transcribeTimeout);
           if (transcribingEl) transcribingEl.classList.add('lpm-hidden');
           if (resp?.success && resp.transcript) {
             transcripts.push(resp.transcript);
+            invalidateDoc();
             renderTranscripts();
           }
         });
@@ -1584,7 +1619,7 @@
       micBtn.innerHTML = ICONS.mic;
       micBtn.title = 'Start recording';
       recBar.classList.add('lpm-hidden');
-      stopBtn.classList.remove('lpm-hidden');
+      stopBtn.classList.add('lpm-hidden');
       remoteLabel.classList.add('lpm-hidden');
       if (recordingTimerInterval) {
         clearInterval(recordingTimerInterval);
@@ -1625,13 +1660,13 @@
       textarea.addEventListener('blur', () => {
         if (transcripts[i].text !== textarea.value) {
           transcripts[i].text = textarea.value;
-          chrome.runtime.sendMessage({ type: 'UPDATE_TRANSCRIPT', index: i, text: textarea.value });
+          safeSendMessage({ type: 'UPDATE_TRANSCRIPT', index: i, text: textarea.value });
           invalidateDoc();
         }
       });
 
       card.querySelector('.lpm-del').addEventListener('click', () => {
-        chrome.runtime.sendMessage({ type: 'DELETE_TRANSCRIPT', index: i }, (resp) => {
+        safeSendMessage({ type: 'DELETE_TRANSCRIPT', index: i }, (resp) => {
           if (resp?.success) {
             transcripts.splice(i, 1);
             invalidateDoc();
@@ -1660,7 +1695,7 @@
   }
 
   function syncMeta() {
-    chrome.runtime.sendMessage({
+    safeSendMessage({
       type: 'UPDATE_SESSION_META',
       meta: { name: sessionName, markdown: generatedMarkdown, hasDoc: hasGeneratedDoc },
     });
@@ -1742,7 +1777,7 @@
       }
     }, 60000); // 60s timeout
 
-    chrome.runtime.sendMessage({ type: 'GENERATE_DOC' }, (resp) => {
+    safeSendMessage({ type: 'GENERATE_DOC' }, (resp) => {
       if (responded) return;
       responded = true;
       clearTimeout(timeout);
@@ -1794,7 +1829,7 @@
       }
     }, 60000);
 
-    chrome.runtime.sendMessage({
+    safeSendMessage({
       type: 'REFINE_DOC',
       currentMarkdown: generatedMarkdown,
       refinement: prompt.trim(),
@@ -1996,7 +2031,7 @@
       debounceTimer = setTimeout(() => {
         const query = searchInput.value.trim();
         resultsDiv.innerHTML = '<div class="lpm-notion-empty">Searching...</div>';
-        chrome.runtime.sendMessage({ type: 'NOTION_SEARCH_PAGES', query }, (resp) => {
+        safeSendMessage({ type: 'NOTION_SEARCH_PAGES', query }, (resp) => {
           if (resp?.success && resp.pages.length > 0) {
             resultsDiv.innerHTML = '';
             resp.pages.forEach((page) => {
@@ -2038,7 +2073,7 @@
     const hasScreenshots = screenshots.length > 0;
     body.innerHTML = `<div class="lpm-notion-pushing"><div class="lpm-spinner"></div><span>${hasScreenshots ? 'Uploading screenshots & creating page...' : 'Creating page...'}</span></div>`;
 
-    chrome.runtime.sendMessage({
+    safeSendMessage({
       type: 'NOTION_CREATE_PAGE',
       parentId,
       title: sessionName,
@@ -2122,7 +2157,7 @@
     noteOverlay.querySelector('#lpm-note-modal-save').addEventListener('click', () => {
       const text = textarea.value.trim();
       if (text) {
-        chrome.runtime.sendMessage({ type: 'ADD_NOTE', text }, (resp) => {
+        safeSendMessage({ type: 'ADD_NOTE', text }, (resp) => {
           if (resp?.success && resp.transcript) {
             transcripts.push(resp.transcript);
             invalidateDoc();
@@ -2147,7 +2182,7 @@
   // ═══════════════════════════════════════════
 
   function saveCurrentSession() {
-    chrome.runtime.sendMessage({
+    safeSendMessage({
       type: 'SAVE_SESSION',
       name: sessionName,
       markdown: generatedMarkdown,
@@ -2164,14 +2199,14 @@
   function startNewSession() {
     // Save current first if there's content and not already saved
     const hasContent = screenshots.length > 0 || transcripts.length > 0;
-    if (hasContent && generatedMarkdown && !sessionSaved) {
-      chrome.runtime.sendMessage({
+    if (hasContent && !sessionSaved) {
+      safeSendMessage({
         type: 'SAVE_SESSION', name: sessionName, markdown: generatedMarkdown,
       });
     }
 
     // Reset state
-    chrome.runtime.sendMessage({ type: 'NEW_SESSION' }, () => {
+    safeSendMessage({ type: 'NEW_SESSION' }, () => {
       screenshots = [];
       transcripts = [];
       generatedMarkdown = '';
@@ -2462,12 +2497,19 @@
   // ═══════════════════════════════════════════
 
   function checkVisibility() {
-    chrome.storage.local.get('settings', (result) => {
-      const enabled = result.settings?.widgetEnabled === true;
-      if (enabled) injectWidget(); else removeWidget();
-    });
+    try {
+      if (!chrome.runtime?.id) return;
+      chrome.storage.local.get('settings', (result) => {
+        if (chrome.runtime.lastError) return;
+        const enabled = result.settings?.widgetEnabled === true;
+        if (enabled) injectWidget(); else removeWidget();
+      });
+    } catch (e) {
+      console.warn('[TheLazyPM] Cannot check visibility — context invalidated');
+    }
   }
 
+  try {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && changes.settings) {
       const enabled = changes.settings.newValue?.widgetEnabled === true;
@@ -2481,13 +2523,13 @@
       addScreenshot(message.dataUrl, message.timestamp, message.url);
     } else if (message.type === 'SESSION_DATA_UPDATED') {
       // Another tab added/removed data — refresh our view
-      chrome.runtime.sendMessage({ type: 'GET_SCREENSHOTS' }, (resp) => {
+      safeSendMessage({ type: 'GET_SCREENSHOTS' }, (resp) => {
         if (resp?.success) {
           screenshots = resp.screenshots;
           renderGrid();
         }
       });
-      chrome.runtime.sendMessage({ type: 'GET_TRANSCRIPTS' }, (resp) => {
+      safeSendMessage({ type: 'GET_TRANSCRIPTS' }, (resp) => {
         if (resp?.success) {
           transcripts = resp.transcripts;
           renderTranscripts();
@@ -2508,18 +2550,20 @@
       hasGeneratedDoc = !!s.markdown;
       transcripts = (s.transcripts || []).map((t) => ({ text: t.text, timestamp: t.timestamp, duration: t.duration }));
 
-      // Fetch restored screenshots from service worker (already loaded into sessionScreenshots)
-      chrome.runtime.sendMessage({ type: 'GET_SCREENSHOTS' }, (resp) => {
+      // Render transcripts and session view immediately
+      if (shadowRoot) {
+        const nameInput = shadowRoot.getElementById('lpm-session-name');
+        if (nameInput) nameInput.value = sessionName;
+        showSessionView();
+        renderTranscripts();
+      }
+
+      // Fetch restored screenshots separately
+      safeSendMessage({ type: 'GET_SCREENSHOTS' }, (resp) => {
         screenshots = (resp?.success && resp.screenshots) ? resp.screenshots : [];
-        if (shadowRoot) {
-          const nameInput = shadowRoot.getElementById('lpm-session-name');
-          if (nameInput) nameInput.value = sessionName;
-          showSessionView();
-          renderTranscripts();
-          renderGrid();
-          if (hasGeneratedDoc) {
-            showDocView(generatedMarkdown);
-          }
+        renderGrid();
+        if (hasGeneratedDoc) {
+          showDocView(generatedMarkdown);
         }
       });
     } else if (message.type === 'SESSION_CLEARED') {
@@ -2539,6 +2583,9 @@
       }
     }
   });
+  } catch (e) {
+    console.warn('[TheLazyPM] Failed to register listeners — context may be invalidated');
+  }
 
   // Sync pending edits on page unload
   window.addEventListener('beforeunload', () => {

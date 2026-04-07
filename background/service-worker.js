@@ -166,6 +166,11 @@ async function persistMeta() {
   } catch (e) { console.error('[TheLazyPM] IndexedDB persist meta failed:', e); }
 }
 
+function touchLastActive() {
+  sessionMeta.lastActiveAt = Date.now();
+  persistMeta();
+}
+
 async function clearDB() {
   try {
     const db = await openDB();
@@ -196,6 +201,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         annotatedUrl: null,
       });
       persistScreenshots();
+      touchLastActive();
       broadcastToTabs({ type: 'SESSION_DATA_UPDATED' });
       sendResponse({ success: true, index: sessionScreenshots.length - 1 });
       return false;
@@ -224,6 +230,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         if (message.annotatedUrl !== undefined) {
           sessionScreenshots[i].annotatedUrl = message.annotatedUrl;
           persistScreenshots();
+          touchLastActive();
         }
         sendResponse({ success: true });
       } else {
@@ -281,6 +288,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         segments: [],
       };
       sessionTranscripts.push(note);
+      touchLastActive();
       persistTranscripts().then(() => {
         broadcastToTabs({ type: 'SESSION_DATA_UPDATED' });
         sendResponse({ success: true, transcript: note });
@@ -297,6 +305,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       if (ti >= 0 && ti < sessionTranscripts.length && message.text !== undefined) {
         sessionTranscripts[ti].text = message.text;
         persistTranscripts();
+        touchLastActive();
         sendResponse({ success: true });
       } else {
         sendResponse({ success: false, error: 'Invalid index' });
@@ -449,6 +458,7 @@ async function transcribeAudio(audioDataUrl, duration, recordingStartTime) {
   };
   sessionTranscripts.push(entry);
   await persistTranscripts();
+  touchLastActive();
   broadcastToTabs({ type: 'SESSION_DATA_UPDATED' });
 
   return { success: true, transcript: entry, index: sessionTranscripts.length - 1 };
@@ -1069,6 +1079,7 @@ async function deleteSession(id) {
     sessionTranscripts = [];
     sessionMeta = { name: 'Untitled Session', markdown: '', hasDoc: false };
     clearDB();
+    broadcastToTabs({ type: 'SESSION_CLEARED' });
   }
   return { success: true, wasActive };
 }

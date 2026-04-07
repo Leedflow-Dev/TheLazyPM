@@ -45,6 +45,13 @@
 - Must NOT include timestamps in the output — just the text and screenshot refs
 - Screenshot refs use `[📷 SS-n]` format (matches Notion parser)
 
+### Extension context safety
+- NEVER use `chrome.runtime.sendMessage` directly in content.js — always use `safeSendMessage` wrapper
+- `safeSendMessage` checks `chrome.runtime.id` and catches errors from invalidated contexts
+- All listeners (`onMessage`, `onChanged`) are wrapped in try/catch
+- `checkVisibility()` guards against invalidated context before accessing `chrome.storage`
+
 ### Widget visibility
 - `showSessionView()`, `showDocView()`, `showLoadingState()` must hide/show the note bar (`lpm-note-bar`) along with other elements
 - New UI elements added to the panel must be toggled in all three view-switch functions
+- Panel and all overlays need `e.stopPropagation()` on wheel events (fixes scroll on Figma etc.)
