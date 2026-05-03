@@ -12,14 +12,45 @@
   <b>No build step. No dependencies. Just load and go.</b>
 </p>
 
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
+  <a href="manifest.json"><img src="https://img.shields.io/badge/chrome-MV3-4285F4.svg" alt="Chrome MV3" /></a>
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome" /></a>
+</p>
+
 ---
 
-## Quick Start
+<!-- TODO: replace with an actual recording. Drop a GIF at docs/demo.gif. -->
+![Demo](docs/demo.gif)
+
+
+
+## ✨ Features
+
+- 📸 **Screenshot Capture & Annotation** — Select a region, then mark it up with **highlight**, **rectangle**, **arrow**, **text**, and a **color picker**. Screenshots are timestamped and referenced inline in the generated doc.
+- 🎙️ **Voice Transcription** — Record audio and Groq's Whisper API transcribes it with timestamps. Transcripts appear as editable cards — fix typos before generating the doc.
+- 📝 **Text Notes** — Drop quick notes without recording. Inline input for short notes, expandable editor for longer markdown entries.
+- 🤖 **AI Doc Generation** — One click turns your session into a structured document. The AI detects the session type and formats accordingly:
+  - 🐛 **Bug reports** → repro steps, severity, expected vs. actual
+  - 📋 **Feature specs / PRDs** → requirements, acceptance criteria, priority tags
+  - 🤝 **Meeting notes** → decisions, action items, owners
+  - 🎨 **Design feedback** → visual references with screenshot callouts
+  - 🗒️ **General notes** → organized by topic
+
+  Choose from Gemini 2.0 Flash (default), Gemini 2.0 Pro, Claude Sonnet 4.6, GPT-4o, or GPT-4o Mini.
+- ⚡ **Skip AI Mode** — Assemble a raw doc from your notes and screenshot references — no API call, no cost, instant.
+- 🔗 **Notion Integration** — Push the generated doc directly to a Notion page. Screenshots are uploaded as inline images via the Notion File Upload API — they render natively, not as external links.
+- 🗂️ **Session History** — Sessions are saved locally (up to 20). Load any past session from the settings popup — transcripts, screenshots, and the generated doc are all restored.
+- 🪟 **Multi-Tab Support** — Start a session on one tab, switch to another, keep recording. The widget syncs state across tabs.
+
+---
+
+## 🚀 Quick Start
 
 ### 1. Install
 
 ```
-git clone <repo-url>
+git clone https://github.com/Leedflow-Dev/TheLazyPM.git
 ```
 
 1. Open **chrome://extensions**
@@ -56,43 +87,7 @@ Toggle the widget **on/off** with the switch in the top-right corner of settings
 
 ---
 
-## Features
-
-### Screenshot Capture & Annotation
-Select a region of the page, then annotate with tools: **highlight**, **rectangle**, **arrow**, **text**, and a **color picker**. Screenshots are timestamped and referenced inline in the generated doc.
-
-### Voice Transcription
-Record audio, and Groq's Whisper API transcribes it with timestamps. Transcripts appear as editable cards — fix typos before generating the doc.
-
-### Text Notes
-Add quick notes without recording audio. Use the inline input for short notes, or expand the editor for longer markdown entries. Notes are treated the same as transcripts in the generated doc.
-
-### AI Doc Generation
-One click turns your session into a structured document. The AI detects the type of session and formats accordingly:
-
-- **Bug reports** → repro steps, severity, expected vs. actual
-- **Feature specs / PRDs** → requirements, acceptance criteria, priority tags
-- **Meeting notes** → decisions, action items, owners
-- **Design feedback** → visual references with screenshot callouts
-- **General notes** → organized by topic
-
-Choose from: Gemini 2.0 Flash (default), Gemini 2.0 Pro, Claude Sonnet 4.6, GPT-4o, or GPT-4o Mini.
-
-### Skip AI Mode
-Check **Skip AI** to assemble a raw doc from your notes and screenshot references — no API call, no cost, instant.
-
-### Notion Integration
-Push the generated doc directly to a Notion page. Screenshots are uploaded as inline images via the Notion File Upload API — they render natively, not as external links.
-
-### Session History
-Sessions are saved locally (up to 20). Load any past session from the settings popup — transcripts, screenshots, and the generated doc are all restored. Delete sessions you no longer need.
-
-### Multi-Tab Support
-Start a session on one tab, switch to another, keep recording. Screenshots capture whichever tab is active. The widget syncs state across tabs.
-
----
-
-## Keyboard Shortcuts
+## ⌨️ Keyboard Shortcuts
 
 | Shortcut | Action |
 |----------|--------|
@@ -144,6 +139,48 @@ TheLazyPM/
 4. Paste it in the extension settings under **Notion Token**
 5. In Notion, open the page you want to push to → click `...` → **Connect to** → select your integration
 6. Now you can push docs from the widget to that page (or create sub-pages under it)
+
+---
+
+## Screenshots
+
+<!-- TODO: capture real screenshots and save to docs/screenshots/ -->
+
+| Settings | Widget |
+|----------|--------|
+| ![Settings](docs/screenshots/settings.png) | ![Widget](docs/screenshots/widget.png) |
+
+| Annotation | Generated Doc |
+|------------|---------------|
+| ![Annotation](docs/screenshots/annotation.png) | ![Generated Doc](docs/screenshots/generated-doc.png) |
+
+---
+
+## Privacy
+
+The Lazy PM runs entirely in your browser. API keys are stored locally in `chrome.storage.local` and are never transmitted anywhere except to the respective provider APIs you configured. Audio, screenshots, and transcripts never leave your machine unless you explicitly:
+
+- Transcribe voice (sent to **Groq**)
+- Generate a doc (sent to **OpenRouter**)
+- Push to Notion (sent to **Notion API**)
+
+No telemetry, no analytics, no tracking.
+
+---
+
+## Contributing
+
+PRs and issues welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for local dev setup and guidelines. If you're making non-trivial changes, also skim [CLAUDE.md](CLAUDE.md) for critical conventions that aren't obvious from the code.
+
+---
+
+## License
+
+[MIT](LICENSE) © 2026 Niranjan Singh
+
+### Third-party credits
+
+- [JSZip](https://stuk.github.io/jszip/) by Stuart Knightley — MIT License (bundled at `libs/jszip.min.js`)
 
 ---
 

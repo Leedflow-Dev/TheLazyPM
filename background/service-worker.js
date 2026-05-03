@@ -559,7 +559,7 @@ Your job: read the session content and decide the best document format yourself.
 ## Rules
 - Be minimal. Do NOT pad the document with empty sections or boilerplate. If a section has no content from the session, omit it entirely.
 - Don't invent details — say [NEEDS INPUT] when something is unclear.
-- IMPORTANT: Place screenshot references using exactly this format: [📷 SS-1], [📷 SS-2], etc. Place them inline in the document at the position where they provide visual context, based on their timestamp relative to the transcript. Every screenshot from the session MUST appear at least once in the output.
+- IMPORTANT: Place screenshot references using exactly this format: [📷 SS-1], [📷 SS-2], etc. Place each screenshot reference on its own line, between paragraphs or after a sentence — NEVER inside a sentence. Position them near the content they illustrate, based on their timestamp relative to the transcript. Every screenshot from the session MUST appear at least once in the output.
 - If tasks are mentioned, just have them as bullet points what needs to be done.
 - Bug fixes → P0, Features → P1, Polish → P2 (only if priorities are relevant).
 - ${tuning}

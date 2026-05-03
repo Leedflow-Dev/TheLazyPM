@@ -798,6 +798,14 @@
     while (wrapper.firstChild) shadowRoot.appendChild(wrapper.firstChild);
 
     document.body.appendChild(hostEl);
+
+    // Stop ALL events on the host element from reaching the page.
+    // Shadow DOM retargets events to the host — pages with "click outside to close"
+    // patterns (CRM sidebars, modals) would otherwise see our clicks as outside clicks.
+    ['click', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchstart', 'touchend'].forEach((evt) => {
+      hostEl.addEventListener(evt, (e) => e.stopPropagation());
+    });
+
     bindWidgetEvents();
 
     // Restore state from service worker
@@ -926,15 +934,31 @@
   //  REGION SCREENSHOT CAPTURE
   // ═══════════════════════════════════════════
 
+  function hideWidgetChrome() {
+    if (!shadowRoot) return;
+    const fab = shadowRoot.querySelector('.lpm-fab');
+    const panel = shadowRoot.querySelector('.lpm-panel');
+    if (fab) fab.style.visibility = 'hidden';
+    if (panel) panel.style.visibility = 'hidden';
+  }
+
+  function showWidgetChrome() {
+    if (!shadowRoot) return;
+    const fab = shadowRoot.querySelector('.lpm-fab');
+    const panel = shadowRoot.querySelector('.lpm-panel');
+    if (fab) fab.style.visibility = '';
+    if (panel) panel.style.visibility = '';
+  }
+
   function startRegionCapture() {
-    // First, hide the widget so it doesn't appear in screenshot
-    if (hostEl) hostEl.style.display = 'none';
+    // Hide only the FAB + panel (not the host, so overlay can still render in shadow DOM)
+    hideWidgetChrome();
 
     // Small delay to let the widget disappear from render
     setTimeout(() => {
       safeSendMessage({ type: 'CAPTURE_SCREENSHOT' }, (resp) => {
-        if (hostEl) hostEl.style.display = '';
         if (!resp?.success) {
+          showWidgetChrome();
           console.error('[TheLazyPM] Screenshot failed:', resp?.error);
           return;
         }
@@ -998,17 +1022,20 @@
       }
 
       canvas.addEventListener('mousedown', (e) => {
+        e.stopPropagation(); e.preventDefault();
         dragging = true;
         startX = e.clientX;
         startY = e.clientY;
       });
 
       canvas.addEventListener('mousemove', (e) => {
+        e.stopPropagation();
         if (!dragging) return;
         drawPreview(startX, startY, e.clientX, e.clientY);
       });
 
       canvas.addEventListener('mouseup', (e) => {
+        e.stopPropagation(); e.preventDefault();
         if (!dragging) return;
         dragging = false;
         const x = Math.min(startX, e.clientX);
@@ -1017,6 +1044,7 @@
         const h = Math.abs(e.clientY - startY);
 
         overlay.remove();
+        showWidgetChrome();
 
         if (w < 10 || h < 10) return; // too small, ignore
 
@@ -1041,6 +1069,7 @@
       function onKey(e) {
         if (e.key === 'Escape') {
           overlay.remove();
+          showWidgetChrome();
           document.removeEventListener('keydown', onKey);
         }
       }

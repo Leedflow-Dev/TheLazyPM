@@ -1,2 +1,14 @@
 .DS_Store
 .claude/
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+
+# Logs
+*.log

@@ -1,5 +1,7 @@
 # The Lazy PM — Product Spec & Build Plan
 
+> **Note:** This is the original design and build-plan document, kept for historical reference. It reflects the project's initial planning phase and may not match the current implementation in every detail. For user-facing docs see [README.md](README.md); for contributor conventions see [CLAUDE.md](CLAUDE.md).
+
 Chrome Extension (Manifest V3) — No build step, plain HTML/CSS/JS.
 
 ---
